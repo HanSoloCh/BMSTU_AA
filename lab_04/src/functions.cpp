@@ -42,14 +42,12 @@ void SiteProcessing::setMaxPages(size_t nMax)
     }
 }
 
-void SiteProcessing::startPagesProcessing()
+void SiteProcessing::startPagesProcessing(const std::regex &linkRegex, const std::regex &divRegex)
 {
-    std::regex liRegex(R"(<div class="col-md-6 col-xl-4 js-item">[\s\S]*?href="(.*?)\"[\s\S]*?</div>)");
-    std::regex divRegex(R"(<div class="recipe-description">[\s\S]*?<div class="text">([\s\S]*?)</div>[\s\S]*?</div>)");
     for (const auto &x : pages)
     {
         std::string pageContent = getPageContentByUrl(x);
-        std::vector<std::string> links = getPageLinks(pageContent, liRegex);
+        std::vector<std::string> links = getPageLinks(pageContent, linkRegex);
         saveLinksContent(links, divRegex);
     }
 }
@@ -64,8 +62,6 @@ std::vector<std::string> SiteProcessing::getPageLinks(const std::string &htmlPag
         matches.push_back(siteUrl + (*iter)[1].str());
         ++iter;
     }
-    for (const auto &x: matches)
-        std::cout << x << std::endl;
     return matches;
 }
 
@@ -75,7 +71,7 @@ void SiteProcessing::saveLinksContent(std::vector<std::string> links, const std:
     {
         std::string pageContent = getPageContentByUrl(x);
         pageContent = extractPageContent(pageContent, regularExpression);
-        savePageContent(pageContent, x);
+        savePageContent(preparePageContentToSave(pageContent), "recipes/" + getPageName(x, pageContent));
     }
 }
 
@@ -85,6 +81,28 @@ std::string SiteProcessing::extractPageContent(const std::string &pageContent, c
     if (std::regex_search(pageContent, match, regularExpression))
     {
         return match[1].str();
+    }
+    return "";
+}
+
+std::string SiteProcessing::preparePageContentToSave(const std::string &pageContent)
+{
+    auto startIt = pageContent.begin();
+    auto endIt = pageContent.rbegin();
+    while (std::isspace(*startIt))
+        ++startIt;
+    while (std::isspace(*endIt))
+        ++endIt;
+    return std::string(startIt, endIt.base());
+}
+
+std::string SiteProcessing::getPageName(const std::string &url, const std::string &pageContent)
+{
+    size_t lastSlashPos = url.find_last_of('/');
+    size_t prevSlashPos = url.find_last_of('/', lastSlashPos - 1);
+
+    if (prevSlashPos != std::string::npos && lastSlashPos != std::string::npos) {
+        return url.substr(prevSlashPos + 1, lastSlashPos - prevSlashPos - 1);
     }
     return "";
 }
