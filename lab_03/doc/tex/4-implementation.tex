@@ -1,0 +1,69 @@
+\chapter{Технологический раздел}
+
+В данном разделе описаны требования к программному обеспечению, реализация алгоритмов и средства реализации.
+
+\section{Требования к программному обеспечению}
+
+Входные данные: массив и искомый элемент;
+Выходные данные: индекс искомого элемента или значение, сигнализирующие об отсутствии искомого элемента в массиве.
+
+
+\section{Средства реализации}
+Для реализации данной лабораторной работы выбран язык программирования высокого уровня Python \cite{python}. Выбор был обусловлен наличием библиотеки $matplotlib$ \cite{python_matplotlib}. Для построения графиков была выбрана функция $bar$ \cite{python_matplotlib_bar}.
+
+\section{Реализация алгоритмов}
+В листингах \ref{lst:liniar} --- \ref{lst:binary} представлены представлены реализации алгоритмов.
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[language=Python, frame=single, numbers=left, label=lst:liniar, caption=Реализация алгоритма линейного поиска]
+def linear_search(array: list, item: int) -> int | None:
+    n = len(array)
+    i = 0
+    index = None
+    
+    while i < n:
+        if larray[i] == item:
+            index = i
+            break
+        i += 1
+        
+    return index
+\end{lstlisting}
+\end{center}
+
+\clearpage
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[language=Python, frame=single, numbers=left, label=lst:binary,caption=Реализация алгоритма бинарного поиска]
+def binary_search(array: list, item: int) -> int | None:
+    left = 0
+    right = len(array) - 1
+    index = None
+    
+    while left <= right:
+        mid = (left + right) // 2
+        if array[mid] == item:
+            item = mid
+            break
+
+        if item < array[mid]:
+            right = mid - 1
+        else:
+            left = mid + 1
+
+    return item
+
+\end{lstlisting}
+\end{center}
+
+\clearpage
+
+
+\clearpage
+
+\textbf{ВЫВОД}
+
+В данном разделе были представлены реализации алгоритмов поиска заданного элемента в массиве методом линейного поиска и методом бинарного поиска, были рассмотрены средства реализации, предъявлены требования к программному обеспечению.
+\clearpage
