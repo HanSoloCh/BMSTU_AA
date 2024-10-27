@@ -3,12 +3,25 @@
 #include <curl/curl.h>
 #include <iostream>
 #include <fstream>
+#include <set>
+#include <thread>
+#include <mutex>
 
-size_t writeCallback(void* contents, size_t size, size_t nmemb, std::string* userp)
+std::set<std::string> uniqueLinks;
+std::mutex linksMutex;
+
+static size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *userp)
 {
     size_t total_size = size * nmemb;
     userp->append(static_cast<const char *>(contents), total_size);
     return total_size;
+}
+
+static void waitAllThreads(std::vector<std::thread> &threads)
+{
+    for (auto &th : threads)
+        th.join();
+    threads.clear();
 }
 
 std::string SiteProcessing::getPageContentByUrl(const std::string &pageUrl)
@@ -42,7 +55,8 @@ void SiteProcessing::setMaxPages(size_t nMax)
     }
 }
 
-void SiteProcessing::startPagesProcessing(const std::regex &linkRegex, const std::regex &divRegex)
+
+void SiteProcessing::sequentialProcessing(const std::regex &linkRegex, const std::regex &divRegex)
 {
     for (const auto &x : pages)
     {
@@ -50,6 +64,31 @@ void SiteProcessing::startPagesProcessing(const std::regex &linkRegex, const std
         std::vector<std::string> links = getPageLinks(pageContent, linkRegex);
         saveLinksContent(links, divRegex);
     }
+}
+
+void SiteProcessing::parallelProcessing(const std::regex &linkRegex, const std::regex &divRegex, size_t numThreads)
+{
+    std::vector<std::thread> threads;
+
+    for (const auto &page : pages)
+    {
+        threads.emplace_back(&SiteProcessing::getPageLinksParallel, this, page, linkRegex);
+        if (threads.size() == numThreads)
+        {
+            waitAllThreads(threads);
+        }
+    }
+    waitAllThreads(threads);
+
+    for (const auto &pageLinks : uniqueLinks)
+    {
+        threads.emplace_back(&SiteProcessing::saveLinksContent, this, pageLinks, divRegex);
+        if (threads.size() == numThreads)
+        {
+            waitAllThreads(threads);
+        }
+    }
+    waitAllThreads(threads);
 }
 
 std::vector<std::string> SiteProcessing::getPageLinks(const std::string &htmlPage, const std::regex &linkRegex)
@@ -63,6 +102,15 @@ std::vector<std::string> SiteProcessing::getPageLinks(const std::string &htmlPag
         ++iter;
     }
     return matches;
+}
+
+void SiteProcessing::getPageLinksParallel(const std::string &url, const std::regex &linkRegex)
+{
+    std::string pageContent = getPageContentByUrl(url);
+    std::vector<std::string> pageLinks = getPageLinks(pageContent, linkRegex);
+
+    std::lock_guard<std::mutex> lock(linksMutex);
+    uniqueLinks.insert(pageLinks.begin(), pageLinks.end());
 }
 
 void SiteProcessing::saveLinksContent(std::vector<std::string> links, const std::regex &regularExpression)

@@ -11,12 +11,15 @@ public:
     SiteProcessing(const std::string &url) : siteUrl(url) {}
 
     void setMaxPages(size_t nMax);
-    void startPagesProcessing(const std::regex &linkRegex, const std::regex &divRegex);
+    void sequentialProcessing(const std::regex &linkRegex, const std::regex &divRegex);
+    void parallelProcessing(const std::regex &linkRegex, const std::regex &divRegex, size_t numThreads);
 protected:
-    std::vector<std::string> getPageLinks(const std::string &htmlPage, const std::regex &linkRegex);
     std::string getPageContentByUrl(const std::string &pageUrl);
+    std::vector<std::string> getPageLinks(const std::string &htmlPage, const std::regex &linkRegex);
+    void getPageLinksParallel(const std::string &url, const std::regex &linkRegex);
 
     void saveLinksContent(std::vector<std::string> links, const std::regex &regularExpression);
+
     std::string extractPageContent(const std::string &pageContent, const std::regex &regularExpression);
     std::string preparePageContentToSave(const std::string &pageContent);
     std::string getPageName(const std::string &url, const std::string &pageContent);
