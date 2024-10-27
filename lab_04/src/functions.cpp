@@ -20,7 +20,12 @@ static size_t writeCallback(void *contents, size_t size, size_t nmemb, std::stri
 static void waitAllThreads(std::vector<std::thread> &threads)
 {
     for (auto &th : threads)
-        th.join();
+    {
+        if (th.joinable())
+        {
+            th.join();
+        }
+    }
     threads.clear();
 }
 
