@@ -80,13 +80,21 @@ void SiteProcessing::parallelProcessing(const std::regex &linkRegex, const std::
     }
     waitAllThreads(threads);
 
-    for (const auto &pageLinks : uniqueLinks)
+    if (numThreads > uniqueLinks.size())
     {
-        threads.emplace_back(&SiteProcessing::saveLinksContent, this, pageLinks, divRegex);
-        if (threads.size() == numThreads)
-        {
-            waitAllThreads(threads);
-        }
+        numThreads = uniqueLinks.size();
+    }
+
+    size_t linksPerThread = uniqueLinks.size() / numThreads;
+    size_t remainder = uniqueLinks.size() % numThreads;
+    auto it = uniqueLinks.begin();
+    size_t start = 0;
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        size_t end = start + linksPerThread + (i < remainder ? 1 : 0);
+        std::vector<std::string> linkForThread(std::next(it, start), std::next(it, end));
+        threads.emplace_back(&SiteProcessing::saveLinksContent, this, linkForThread, divRegex);
+        start = end;
     }
     waitAllThreads(threads);
 }
