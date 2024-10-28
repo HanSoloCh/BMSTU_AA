@@ -15,8 +15,8 @@ def get_mes_data(mes_data):
 
     for data in mes_data:
         threads.append(int(data['pages']))
-        threads_1.append(float(data['1_threads']))
-        threads_2.append(float(data['16_threads']))
+        threads_1.append(float(data['1_threads']) / 1000)
+        threads_2.append(float(data['16_threads']) / 1000)
 
     return threads, threads_1, threads_2
 
