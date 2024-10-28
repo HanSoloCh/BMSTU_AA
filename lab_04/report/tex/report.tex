@@ -1,0 +1,34 @@
+\documentclass{bmstu}
+
+\bibliography{biblio}
+
+\usepackage{geometry} % Отступы
+    \geometry{left=20mm}
+    \geometry{right=10mm}
+    \geometry{top=20mm}
+    \geometry{bottom=20mm}
+
+
+\begin{document}
+
+\makereporttitle
+    {Информатика и системы управления}
+    {Программное обеспечение ЭВМ и информационные технологии}
+    {лабораторной работе №~4}
+    {Анализ алгоритмов}
+    {}
+    {}
+    {Новиков~А.~А./ИУ7-52Б}
+    {Строганов~Д.~В.}
+
+\renewcommand{\contentsname}{СОДЕРЖАНИЕ} 
+\tableofcontents
+\setcounter{page}{2}
+
+\include{1-mainbody}
+\include{2-conclusion}
+\makebibliography
+
+
+
+\end{document}

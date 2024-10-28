@@ -1,33 +1,28 @@
-CC = gcc
-CFLAGS = -std=c99 -Wall -Werror -Wpedantic -Wextra -Wvla -Wfloat-equal -Wfloat-conversion
-TESTFLAGS = --coverage -lcheck -lm -lsubunit
-INC= -I inc
+CC = g++
+CFLAGS = -std=c++17 -Wall -Werror -Wextra -Wvla -Wfloat-equal -Wfloat-conversion
+INC = -I inc
 
-SRC = $(wildcard src/*.c)
-TESTSRC = $(wildcard unit_tests/*.c)
+SRC = $(wildcard src/*.cpp)
 HEADERS = $(wildcard inc/*.h)
 
-MAIN = src/main.c
+MAIN = src/main.cpp
 
 READY_DIR = ready
 
 OBJDIR = out
-OBJ = $(patsubst src/%.c, $(OBJDIR)/%.o, $(SRC))
+OBJ = $(patsubst src/%.cpp, $(OBJDIR)/%.o, $(SRC))
 TESTOBJ = $(patsubst unit_tests/%.c, $(OBJDIR)/%.o, $(TESTSRC))
 
 MAIN_TARGET = app.exe 
 DEBUG_TARGET = debug.exe
-TEST_TARGET = test.exe
 
-.PHONY: build
-build: $(MAIN_TARGET)
 
 .PHONY: release
-release: CFLAGS += -O3 -lm
+release: CFLAGS += -O3
 release: $(MAIN_TARGET)
 
 .PHONY: debug
-debug: CFLAGS += -g3 -O0 -lm
+debug: CFLAGS += -g3 -O0
 debug: $(MAIN_TARGET)
 	mv $^ $(DEBUG_TARGET)
 	
@@ -35,14 +30,9 @@ debug: $(MAIN_TARGET)
 clean:
 	rm -rf *.exe *.gcov *.gcda $(OBJDIR)
 	
-.PHONY: test
-test: CFLAGS += -g -O0 --coverage -DTEST
-test: $(TEST_TARGET)
-	@./$(TEST_TARGET)
-	@./coverage.sh
 
 $(MAIN_TARGET): $(OBJDIR) $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $@
+	$(CC) $(CFLAGS) $(OBJ) -o $@ -lcurl -lstdc++
 	
 $(TEST_TARGET): $(OBJDIR) $(OBJ) $(TESTOBJ)
 	$(CC) $(CFLAGS) $(OBJ) $(TESTOBJ) -o $@ $(TESTFLAGS)
@@ -50,13 +40,11 @@ $(TEST_TARGET): $(OBJDIR) $(OBJ) $(TESTOBJ)
 $(OBJDIR):
 	@mkdir -p out
 	
-$(OBJDIR)/%.o: src/%.c $(HEADERS)
+$(OBJDIR)/%.o: src/%.cpp $(HEADERS)
 	$(CC) $(INC) -c $< -o $@ $(CFLAGS) 
 
-$(OBJDIR)/%.o: unit_tests/%.c $(HEADERS)
-	$(CC) $(INC) -c $< -o $@ $(CFLAGS) $(TESTFLAGS)
 	
-	
+# pipelines
 $(READY_DIR)/stud-unit-test-report-prev.json:
 	
 
@@ -71,8 +59,5 @@ $(READY_DIR)/report.pdf: $(READY_DIR)
 
 $(READY_DIR):
 	@mkdir -p ./ready
-
 	
 	
-
-

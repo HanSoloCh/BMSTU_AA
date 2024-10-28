@@ -6,6 +6,8 @@
 #include <set>
 #include <thread>
 #include <mutex>
+#include <filesystem>
+
 
 std::set<std::string> uniqueLinks;
 std::mutex linksMutex;
@@ -159,6 +161,7 @@ std::string SiteProcessing::preparePageContentToSave(const std::string &pageCont
 
 std::string SiteProcessing::getPageName(const std::string &url, const std::string &pageContent)
 {
+    (void)pageContent;
     size_t lastSlashPos = url.find_last_of('/');
     size_t prevSlashPos = url.find_last_of('/', lastSlashPos - 1);
 
@@ -170,6 +173,7 @@ std::string SiteProcessing::getPageName(const std::string &url, const std::strin
 
 void SiteProcessing::savePageContent(const std::string &pageContent, const std::string &fileName)
 {
+    std::filesystem::create_directory("recipes");
     std::ofstream file(fileName);
     file << pageContent;
     file.close();

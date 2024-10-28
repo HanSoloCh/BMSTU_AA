@@ -1,38 +1,37 @@
 #include <iostream>
 #include <fstream>
-#include <chrono>
-
+#include <limits>
 
 #include "functions.h"
 
 int main()
 {
+
+    int count;
+    std::cout << "Введите количество обрабатываемых страниц: ";
+    while (!(std::cin >> count) || count <= 0)
+    {
+        std::cout << "Некорректное число страниц! Введите положительное число: ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
+    int countThreads;
+    std::cout << "Введите количество потоков (1 для последовательного режима): ";
+    while (!(std::cin >> countThreads) || countThreads <= 0)
+    {
+        std::cout << "Некорректное число потоков! Введите положительное число: ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
     SiteProcessing site("https://redmond.company");
-    site.setMaxPages(5);
+    site.setMaxPages(count);
     std::regex linkRegex(R"(<div class="col-md-6 col-xl-4 js-item">[\s\S]*?href="(.*?)\"[\s\S]*?</div>)");
     std::regex divRegex(R"(<div class="recipe-description">[\s\S]*?<div class="text">([\s\S]*?)</div>[\s\S]*?</div>)");
-
-    std::ofstream resultFile("performance_results.csv");
-    resultFile << "threads|time\n";
-
-    auto start = std::chrono::high_resolution_clock::now();
-    site.sequentialProcessing(linkRegex, divRegex);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> duration = end - start;
-    resultFile << 1 << "|" << duration.count() << std::endl;
-
-    int threadsNum[] = {2, 4, 8, 16, 32, 64};
-    for (const auto &num : threadsNum)
-    {
-        std::cout << num;
-        auto start = std::chrono::high_resolution_clock::now();
-        site.parallelProcessing(linkRegex, divRegex, num);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        resultFile << num << "|" << duration.count() << std::endl;
-    }
-    resultFile.close();
-
-    // site.sequentialProcessing(linkRegex, divRegex);
+    if (countThreads == 1)
+        site.sequentialProcessing(linkRegex, divRegex);
+    else
+        site.parallelProcessing(linkRegex, divRegex, countThreads);
     return 0;
 }
