@@ -45,7 +45,7 @@ clean:
 	
 
 $(MAIN_TARGET): $(OBJDIR) $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $@ -lsqlite3 -lstdc++
+	$(CC) $(CFLAGS) $(OBJ) -o $@ -lcurl -lstdc++
 	
 $(TEST_TARGET): $(OBJDIR) $(OBJ) $(TESTOBJ)
 	$(CC) $(CFLAGS) $(OBJ) $(TESTOBJ) -o $@ $(TESTFLAGS)
