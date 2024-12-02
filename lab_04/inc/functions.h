@@ -19,6 +19,7 @@ protected:
     void getPageLinksParallel(const std::string &url, const std::regex &linkRegex);
 
     void saveLinksContent(std::vector<std::string> links, const std::regex &regularExpression);
+    void saveLinksContentParallel(std::vector<std::string> links, const std::regex &regularExpression, size_t threadNum);
 
     std::string extractPageContent(const std::string &pageContent, const std::regex &regularExpression);
     std::string preparePageContentToSave(const std::string &pageContent);

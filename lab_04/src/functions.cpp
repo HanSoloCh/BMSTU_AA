@@ -7,10 +7,31 @@
 #include <thread>
 #include <mutex>
 #include <filesystem>
+#include <iomanip>
 
 
 std::set<std::string> uniqueLinks;
 std::mutex linksMutex;
+std::vector<std::string> logVector;
+
+static std::string getTime()
+{
+    time_t rawtime;
+    struct tm *timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    std::ostringstream oss;
+    oss << std::setfill('0')
+        << std::setw(2) << timeinfo->tm_mday << "."
+        << std::setw(2) << (timeinfo->tm_mon + 1) << "."
+        << (timeinfo->tm_year + 1900) << " "
+        << std::setw(2) << timeinfo->tm_hour << ":"
+        << std::setw(2) << timeinfo->tm_min << ":"
+        << std::setw(2) << timeinfo->tm_sec;
+    return oss.str();
+}
+
 
 static size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *userp)
 {
@@ -41,6 +62,11 @@ std::string SiteProcessing::getPageContentByUrl(const std::string &pageUrl)
         curl_easy_setopt(curl, CURLOPT_URL, pageUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+
         CURLcode res = curl_easy_perform(curl);
         if (res != CURLE_OK)
         {
@@ -96,14 +122,21 @@ void SiteProcessing::parallelProcessing(const std::regex &linkRegex, const std::
     size_t remainder = uniqueLinks.size() % numThreads;
     auto it = uniqueLinks.begin();
     size_t start = 0;
+    
+    logVector.resize(numThreads);
     for (size_t i = 0; i < numThreads; ++i)
     {
         size_t end = start + linksPerThread + (i < remainder ? 1 : 0);
         std::vector<std::string> linkForThread(std::next(it, start), std::next(it, end));
-        threads.emplace_back(&SiteProcessing::saveLinksContent, this, linkForThread, divRegex);
+        threads.emplace_back(&SiteProcessing::saveLinksContentParallel, this, linkForThread, divRegex, i);
         start = end;
     }
     waitAllThreads(threads);
+    
+    for (const auto &x : logVector)
+    {
+    	std::cout << x;
+    } 
 }
 
 std::vector<std::string> SiteProcessing::getPageLinks(const std::string &htmlPage, const std::regex &linkRegex)
@@ -135,6 +168,46 @@ void SiteProcessing::saveLinksContent(std::vector<std::string> links, const std:
         std::string pageContent = getPageContentByUrl(x);
         pageContent = extractPageContent(pageContent, regularExpression);
         savePageContent(preparePageContentToSave(pageContent), "recipes/" + getPageName(x, pageContent));
+    }
+}
+
+std::vector<std::string> getIngredients(const std::string &htmlPage, const std::regex &regex)
+{
+    std::vector<std::string> matches;
+    std::sregex_iterator iter(htmlPage.begin(), htmlPage.end(), regex);
+    std::sregex_iterator end;
+
+    while (iter != end) {
+        matches.push_back((*iter)[1].str());
+        ++iter;
+    }
+    return matches;
+}
+
+void SiteProcessing::saveLinksContentParallel(std::vector<std::string> links, const std::regex &regularExpression, size_t threadNum)
+{
+    for (const auto &x : links)
+    {
+    	std::regex nameRegex(R"(<div class="recipe-card-title-name">([\s\S]*?)</div>)");
+    	
+    	std::regex ingrRegex(R"(<div class="recipe-ingredients-name">([\s\S]*?)</div>)");
+    	std::regex ingrCountRegex(R"(<div class="recipe-ingredients-count">([\s\S]*?)</div>)");
+    	
+        std::string pageContent = getPageContentByUrl(x);
+	std::string pageName = extractPageContent(pageContent, nameRegex);
+        std::vector<std::string> ingredients = getIngredients(pageContent, ingrRegex);
+        std::vector<std::string> ingredientsCount = getIngredients(pageContent, ingrCountRegex);
+        
+        std::string ingr = "Ингредиенты:\n";
+        for (size_t i = 0; i < ingredients.size(); ++i) 
+		ingr += preparePageContentToSave(ingredients[i]) + " " + preparePageContentToSave(ingredientsCount[i]) + "\n";
+        
+        pageContent = extractPageContent(pageContent, regularExpression);
+        std::string name = getPageName(x, pageContent);
+        
+
+        savePageContent(x + "\n" + pageName + "\n" + ingr + "Рецепт:\n" + preparePageContentToSave(pageContent), "recipes/" + name);
+        logVector[threadNum] += threadNum + " threads: " + getTime() + " save recip " + name + "\n"; 
     }
 }
 
