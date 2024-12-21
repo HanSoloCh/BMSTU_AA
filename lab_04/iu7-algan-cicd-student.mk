@@ -59,5 +59,5 @@ $(READY_DIR)/report.pdf: $(READY_DIR)
 
 $(READY_DIR):
 	@mkdir -p ./ready
-
+	
 
