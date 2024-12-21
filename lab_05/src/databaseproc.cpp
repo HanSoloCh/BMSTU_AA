@@ -2,6 +2,7 @@
 
 
 #include <sqlite3.h>
+#include <iostream>
 
 
 void saveRecipeToDatabase(sqlite3 *db, const RecipeTask &recipe) {
@@ -25,7 +26,7 @@ void saveRecipeToDatabase(sqlite3 *db, const RecipeTask &recipe) {
     sqlite3_stmt *stmt;
     sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
     sqlite3_bind_int(stmt, 1, recipe.GetTaskIndex());
-    sqlite3_bind_int(stmt, 2, 13);
+    sqlite3_bind_int(stmt, 2, 9171);
     sqlite3_bind_text(stmt, 3, url.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 4, name.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 5, ingredients_str.c_str(), -1, SQLITE_STATIC);
@@ -62,17 +63,17 @@ sqlite3 *createDataBase(const char *database_name) {
     return db;
 }
 
-#include <iostream>
+
 
 void WriteToDataBase(TaskQueue<RecipeTask> &input_queue, TaskQueue<Task> &output_queue, Logger &logger) {
     sqlite3 *db = createDataBase("recipes.db");
-    while (true) {
+    while (!Flags::is_finished.load()) {
         if (!input_queue.IsEmpty()) {
             RecipeTask task = input_queue.Pop();
             ssize_t task_index = task.GetTaskIndex();
             if (task_index == -1) {
                 output_queue.Push(StringTask());
-                break;
+                continue;
             }
             task.StopWait(2);
             task.StartWork(2);

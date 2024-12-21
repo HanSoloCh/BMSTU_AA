@@ -3,17 +3,18 @@
 #include <sstream>
 #include <string>
 #include <codecvt>
+#include <iostream>
 
 void ReadFile(TaskQueue<StringTask> &input_queue,
               TaskQueue<StringTask> &output_queue,
               Logger &logger) {
-    while (true) {
+    while (!Flags::is_finished.load()) {
         if (!input_queue.IsEmpty()) {
             StringTask task = input_queue.Pop();
             ssize_t task_index = task.GetTaskIndex();
             if (task_index == -1) {
                 output_queue.Push(StringTask());
-                break;
+                continue;
             }
             task.StopWait(0);
             task.StartWork(0);
@@ -37,13 +38,13 @@ void ReadFile(TaskQueue<StringTask> &input_queue,
 void ParceData(TaskQueue<StringTask> &input_queue,
                TaskQueue<RecipeTask> &output_queue,
                Logger &logger) {
-    while (true) {
+    while (!Flags::is_finished.load()) {
         if (!input_queue.IsEmpty()) {
             StringTask task = input_queue.Pop();
             ssize_t task_index = task.GetTaskIndex();
             if (task_index == -1) {
                 output_queue.Push(RecipeTask());
-                break;
+                continue;
             }
             task.StopWait(1);
 

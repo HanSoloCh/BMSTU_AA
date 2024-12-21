@@ -512,3 +512,7 @@ compile_commands.json
 
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,latex,qtcreator,qt
+*.txt
+*/recipes
+*.exe
+

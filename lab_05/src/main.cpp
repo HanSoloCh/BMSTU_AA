@@ -4,8 +4,16 @@
 
 #include <filesystem>
 #include <thread>
+#include <iostream>
+
+namespace Flags {
+    std::atomic<bool> is_finished(false);
+}
+
 
 namespace fs = std::filesystem;
+
+const std::string kDirName = "./recipes";
 
 std::vector<std::string> GetFileNames(const std::string& directoryPath) {
     std::vector<std::string> fileNames;
@@ -29,9 +37,9 @@ int main()
     TaskQueue<RecipeTask> q3;
     TaskQueue<Task> final;
 
-    std::vector<std::string> file_names = GetFileNames("./recipes");
+    std::vector<std::string> file_names = GetFileNames(kDirName);
     for (size_t i = 0; i < file_names.size(); ++i) {
-        StringTask task(file_names[i], i + 1);
+        StringTask task(kDirName + "/" + file_names[i], i + 1);
         task.StartWait(0);
         q1.Push(task);
     }
@@ -44,10 +52,6 @@ int main()
     std::thread parcer_thread([&] {ParceData(q2, q3, log2); });
     std::thread writer_thread([&] {WriteToDataBase(q3, final, log3); });
 
-    reader_thread.join();
-    parcer_thread.join();
-    writer_thread.join();
-
 
     size_t count = 0;
     std::array<clock_t, 3> wait_time_;
@@ -58,17 +62,26 @@ int main()
         work_time_[i] = 0;
     }
 
-    while (!final.IsEmpty()) {
-        Task task = final.Pop();
-        if (task.GetTaskIndex() == -1) {
-            break;
-        }
-        ++count;
-        for (size_t i = 0; i < 3; ++i) {
-            wait_time_[i] += task.GetWaitTime()[i];
-            work_time_[i] += task.GetWorkTime()[i];
+    while (true) {
+        if (!final.IsEmpty()) {
+            Task task = final.Pop();
+            if (task.GetTaskIndex() == -1) {
+	        Flags::is_finished.store(true);
+                break;
+            }
+            ++count;
+            for (size_t i = 0; i < 3; ++i) {
+                wait_time_[i] += task.GetWaitTime()[i];
+                work_time_[i] += task.GetWorkTime()[i];
+            }
         }
     }
+    
+    // Завершаем потоки
+    reader_thread.join();
+    parcer_thread.join();
+    writer_thread.join();
+    
     std::ofstream last_log("final_log.txt");
 
     for (size_t i = 0; i < 3; ++i) {

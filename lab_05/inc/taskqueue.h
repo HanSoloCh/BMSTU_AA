@@ -5,6 +5,11 @@
 
 #include <queue>
 #include <task.h>
+#include <atomic>
+
+namespace Flags {
+    extern std::atomic<bool> is_finished;
+}
 
 
 template <typename T>
