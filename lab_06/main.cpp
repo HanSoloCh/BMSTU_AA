@@ -11,10 +11,11 @@
 using namespace std;
 
 // Константы
-double ALPHA = 1.0; // Влияние феромонов
-double BETA = 0.5;  // Влияние длины пути
+double ALPHA = 1.0;  // Влияние феромонов
+double BETA = 0.5;   // Влияние длины пути
 double EVAPORATION_RATE = 0.8; // Коэффициент испарения феромонов
-int ITERATIONS = 100;           // Количество итераций
+int ITERATIONS = 100; // Количество итераций
+int NUM_ANTS = 10;   // Количество муравьев
 
 double calculateDistance(const vector<int>& path, const vector<vector<int>>& graph) {
     double distance = 0;
@@ -93,7 +94,7 @@ int chooseNextCity(int current, const vector<bool>& visited, const vector<vector
 }
 
 // Основная функция муравьиного алгоритма
-vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
+vector<int> antColonyOptimization(const vector<vector<int>>& graph, int numAnts) {
     size_t n = graph.size();
     vector<vector<double>> pheromones(n, vector<double>(n, 1.0)); // Начальные феромоны
     vector<int> bestCycle;      // Лучший цикл
@@ -102,7 +103,8 @@ vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
     srand(time(0));
 
     for (int iter = 0; iter < ITERATIONS; ++iter) {
-        for (size_t start = 0; start < n; ++start) { // Каждый муравей начинает с разных городов
+        for (int ant = 0; ant < numAnts; ++ant) { // Каждый муравей начинает с разных городов
+            int start = rand() % n; // Начало с случайного города
             vector<bool> visited(n, false);
             vector<int> cycle;
             int current = start;
@@ -119,7 +121,7 @@ vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
             }
 
             // Замыкаем цикл
-            if (cycle.size() == n & graph[cycle.back()][cycle[0]] > 0) {
+            if (cycle.size() == n && graph[cycle.back()][cycle[0]] > 0) {
                 cycle.push_back(cycle[0]);
                 double distance = calculateDistance(cycle, graph);
                 if (distance < bestDistance) {
@@ -148,43 +150,44 @@ void runExperiment(const vector<vector<vector<int>>>& graphs) {
         cout << exactDistance << " s";
     }
 
-    vector<double> alphas = {0.10, 0.25, 0.5, 0.75, 0.9};
-    vector<double> evaporationRates = {0.1, 0.25, 0.5, 0.75, 0.9};
-    vector<int> days = {10, 20, 50, 100, 200};
+    vector<int> numAntsOptions = {2, 4, 6, 8, 10, 12};  // Количество муравьев для эксперимента
+    vector<double> alphas = {0.10};
+    vector<double> evaporationRates = {0.5};
+    vector<int> days = {50};
 
     for (double alpha : alphas) {
         for (double evaporation : evaporationRates) {
             for (int daysCount : days) {
-                ALPHA = alpha;
-                EVAPORATION_RATE = evaporation;
-                ITERATIONS = daysCount;
-                f << alpha << " & " << evaporation << " & " << daysCount << " & ";
-                for (size_t i = 0; i < graphs.size(); ++i) {
-                    auto graph = graphs[i];
+                for (int numAnts : numAntsOptions) { // Перебор количества муравьев
+                    ALPHA = alpha;
+                    EVAPORATION_RATE = evaporation;
+                    ITERATIONS = daysCount;
+                    NUM_ANTS = numAnts;
+                    f << numAnts << " & ";
+                    for (size_t i = 0; i < graphs.size(); ++i) {
+                        auto graph = graphs[i];
 
-                    vector<double> deviations;
+                        vector<double> deviations;
 
-                    for (int count = 0; count < 10; ++count) {
-                        auto cycle = antColonyOptimization(graph);
-                        double distance = calculateDistance(cycle, graph);
-                        double deviation = distance - answers[i];
-                        deviations.push_back(deviation);
-                        // cout << deviation << " ";
+                        for (int count = 0; count < 10; ++count) {
+                            auto cycle = antColonyOptimization(graph, NUM_ANTS);
+                            double distance = calculateDistance(cycle, graph);
+                            double deviation = distance - answers[i];
+                            deviations.push_back(deviation);
+                        }
+
+                        // double minDeviation = *min_element(deviations.begin(), deviations.end());
+                        // double maxDeviation = *max_element(deviations.begin(), deviations.end());
+                        double avgDeviation = accumulate(deviations.begin(), deviations.end(), 0.0) / deviations.size();
+                        if (i == graphs.size() - 1)
+                            f << avgDeviation;
+                        else
+                            f << avgDeviation << " & ";
                     }
-
-                    double minDeviation = *min_element(deviations.begin(), deviations.end());
-                    // f << minDeviation << "\n";
-                    double maxDeviation = *max_element(deviations.begin(), deviations.end());
-                    // cout << maxDeviation << "\n";
-                    double avgDeviation = accumulate(deviations.begin(), deviations.end(), 0.0) / deviations.size();
-                    if (i == graphs.size() - 1)
-                        f << minDeviation << " & " << maxDeviation << " & " << avgDeviation;
-                    else
-                        f << minDeviation << " & " << maxDeviation << " & " << avgDeviation << " & ";
+                    f << " \\\\ \n";
                 }
-                f << " \\\\ \n";
+                f << "\\hline \n";
             }
-            f << "\\hline \n";
         }
     }
     f.close();
@@ -231,7 +234,7 @@ int main() {
         {101, 88, 79, 70, 61, 44, 35, 22, 13, 0}
     };
 
-    vector<vector<vector<int>>> graphs = {graph1, graph2, graph3};
+    vector<vector<vector<int>>> graphs = {graph1};
 
     runExperiment(graphs);
     return 0;
