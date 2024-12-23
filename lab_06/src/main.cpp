@@ -10,18 +10,18 @@
 
 using namespace std;
 
-// Константы
-double ALPHA = 1.0; // Влияние феромонов
-double BETA = 0.5;  // Влияние длины пути
-double EVAPORATION_RATE = 0.8; // Коэффициент испарения феромонов
-int ITERATIONS = 100;           // Количество итераций
+
+double ALPHA = 1.0;
+double BETA = 0.5;
+double EVAPORATION_RATE = 0.8;
+int ITERATIONS = 100;
 
 double calculateDistance(const vector<int>& path, const vector<vector<int>>& graph) {
     double distance = 0;
     for (size_t i = 0; i < path.size() - 1; ++i) {
         distance += graph[path[i]][path[i + 1]];
     }
-    distance += graph[path.back()][path[0]]; // Замыкаем цикл
+    distance += graph[path.back()][path[0]];
     return distance;
 }
 
@@ -44,32 +44,32 @@ pair<vector<int>, double> bruteForceTSP(const vector<vector<int>>& graph) {
     return {bestCycle, minDistance};
 }
 
-// Функция для обновления феромонов
+
 void updatePheromones(vector<vector<double>>& pheromones, const vector<int>& bestCycle, double bestDistance) {
     int n = pheromones.size();
-    // Испарение феромонов
+
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
             pheromones[i][j] *= (1.0 - EVAPORATION_RATE);
         }
     }
 
-    // Усиление феромонов на ребрах лучшего пути
+
     for (size_t i = 0; i < bestCycle.size() - 1; ++i) {
         int u = bestCycle[i];
         int v = bestCycle[i + 1];
         pheromones[u][v] += 1.0 / bestDistance;
-        pheromones[v][u] += 1.0 / bestDistance; // Граф неориентированный
+        pheromones[v][u] += 1.0 / bestDistance;
     }
 }
 
-// Функция выбора следующей вершины
+
 int chooseNextCity(int current, const vector<bool>& visited, const vector<vector<double>>& pheromones, const vector<vector<int>>& graph) {
     int n = graph.size();
     vector<double> probabilities(n, 0.0);
     double sum = 0.0;
 
-    // Вычисляем вероятность перехода в каждую вершину
+
     for (int next = 0; next < n; ++next) {
         if (!visited[next]) {
             probabilities[next] = pow(pheromones[current][next], ALPHA) * pow(1.0 / graph[current][next], BETA);
@@ -77,7 +77,7 @@ int chooseNextCity(int current, const vector<bool>& visited, const vector<vector
         }
     }
 
-    // Генерируем случайное число и выбираем вершину
+
     double randomValue = ((double)rand() / RAND_MAX) * sum;
     double cumulative = 0.0;
     for (int next = 0; next < n; ++next) {
@@ -89,27 +89,25 @@ int chooseNextCity(int current, const vector<bool>& visited, const vector<vector
         }
     }
 
-    return -1; // Должно быть выбрано раньше
+    return -1;
 }
 
-// Основная функция муравьиного алгоритма
+
 vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
     size_t n = graph.size();
-    vector<vector<double>> pheromones(n, vector<double>(n, 1.0)); // Начальные феромоны
-    vector<int> bestCycle;      // Лучший цикл
-    double bestDistance = numeric_limits<double>::max(); // Длина лучшего цикла
-
+    vector<vector<double>> pheromones(n, vector<double>(n, 1.0));
+    vector<int> bestCycle;
+    double bestDistance = numeric_limits<double>::max();
     srand(time(0));
 
     for (int iter = 0; iter < ITERATIONS; ++iter) {
-        for (size_t start = 0; start < n; ++start) { // Каждый муравей начинает с разных городов
+        for (size_t start = 0; start < n; ++start) {
             vector<bool> visited(n, false);
             vector<int> cycle;
             int current = start;
             cycle.push_back(current);
             visited[current] = true;
 
-            // Построение пути
             while (cycle.size() < n) {
                 int next = chooseNextCity(current, visited, pheromones, graph);
                 if (next == -1) break;
@@ -118,7 +116,6 @@ vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
                 current = next;
             }
 
-            // Замыкаем цикл
             if (cycle.size() == n & graph[cycle.back()][cycle[0]] > 0) {
                 cycle.push_back(cycle[0]);
                 double distance = calculateDistance(cycle, graph);
@@ -129,7 +126,6 @@ vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
             }
         }
 
-        // Обновление феромонов
         if (!bestCycle.empty()) {
             updatePheromones(pheromones, bestCycle, bestDistance);
         }
@@ -169,13 +165,10 @@ void runExperiment(const vector<vector<vector<int>>>& graphs) {
                         double distance = calculateDistance(cycle, graph);
                         double deviation = distance - answers[i];
                         deviations.push_back(deviation);
-                        // cout << deviation << " ";
                     }
 
                     double minDeviation = *min_element(deviations.begin(), deviations.end());
-                    // f << minDeviation << "\n";
                     double maxDeviation = *max_element(deviations.begin(), deviations.end());
-                    // cout << maxDeviation << "\n";
                     double avgDeviation = accumulate(deviations.begin(), deviations.end(), 0.0) / deviations.size();
                     if (i == graphs.size() - 1)
                         f << minDeviation << " & " << maxDeviation << " & " << avgDeviation;
@@ -191,7 +184,6 @@ void runExperiment(const vector<vector<vector<int>>>& graphs) {
 }
 
 int main() {
-    // Матрица смежности графа (с весами рёбер)
     vector<vector<int>> graph1 = {
         {0, 23, 36, 67, 21, 20, 90, 48, 34, 53},
         {23, 0, 2, 17, 38, 67, 36, 42, 47, 48},

@@ -1,0 +1,138 @@
+\chapter{Технологический раздел}
+
+В данном разделе будут приведены средства реализации, листинги кода.
+
+\section{Средства реализации}
+Для реализации данной лабораторной работы выбран язык программирования \textit{C++}~\cite{C++}. Выбор обусловлен скоростью выполнения и наличием множества библиотек, упрощающих разработку.
+
+\section{Реализация алгоритмов}
+В листингах~\ref{lst:default} ---~\ref{lst:last} представлены реализации алгоритмов.
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[language=C++, frame=single, numbers=left, label=lst:default, caption=Реализация алгоритма полного перебора]
+std::vector<int> bruteForceTSP(const std::vector<std::vector<int>>& graph) {
+    int n = graph.size();
+    std::vector<int> vertices(n);
+    for (int i = 0; i < n; ++i) vertices[i] = i;
+
+    std::vector<int> bestCycle;
+    double minDistance = numeric_limits<double>::max();
+
+    do {
+        double currentDistance = calculateDistance(vertices, graph);
+        if (currentDistance < minDistance) {
+            minDistance = currentDistance;
+            bestCycle = vertices;
+        }
+    } while (next_permutation(vertices.begin() + 1, vertices.end()));
+
+    return bestCycle;
+}
+\end{lstlisting}
+\end{center}
+
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[language=C++, frame=single, numbers=left, label=lst:vinograd,caption=Реализация функции обновления ферамонов]
+void updatePheromones(std::vector<std::vector<double>>& pheromones, const std::vector<int>& bestCycle, double bestDistance) {
+    int n = pheromones.size();
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            pheromones[i][j] *= (1.0 - EVAPORATION_RATE);
+        }
+    }
+
+    for (size_t i = 0; i < bestCycle.size() - 1; ++i) {
+        int u = bestCycle[i];
+        int v = bestCycle[i + 1];
+        pheromones[u][v] += 1.0 / bestDistance;
+        pheromones[v][u] += 1.0 / bestDistance;
+    }
+}
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[language=C++, frame=single, numbers=left, label=lst:vinograd_mod, caption=Реализация функции выбора следующей вершины]
+int chooseNextCity(int current, const std::vector<bool>& visited, const std::vector<std::vector<double>>& pheromones, const std::vector<std::vector<int>>& graph) {
+    int n = graph.size();
+    std::vector<double> probabilities(n, 0.0);
+    double sum = 0.0;
+
+    for (int next = 0; next < n; ++next) {
+        if (!visited[next]) {
+            probabilities[next] = pow(pheromones[current][next], ALPHA) * pow(1.0 / graph[current][next], BETA);
+            sum += probabilities[next];
+        }
+    }
+
+    double randomValue = ((double)rand() / RAND_MAX) * sum;
+    double cumulative = 0.0;
+    for (int next = 0; next < n; ++next) {
+        if (!visited[next]) {
+            cumulative += probabilities[next];
+            if (cumulative >= randomValue) {
+                return next;
+            }
+        }
+    }
+}
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[language=C++, frame=single, numbers=left, label=lst:last, caption=Реализация муравьиного алгоритма]
+vector<int> antColonyOptimization(const std::vector<std::vector<int>>& graph) {
+    size_t n = graph.size();
+    std::vector<std::vector<double>> pheromones(n, vector<double>(n, 1.0));
+    std::vector<int> bestCycle;
+    double bestDistance = numeric_limits<double>::max();
+
+    srand(time(0));
+
+    for (int iter = 0; iter < ITERATIONS; ++iter) {
+        for (size_t start = 0; start < n; ++start) {
+            std::vector<bool> visited(n, false);
+            std::vector<int> cycle;
+            int current = start;
+            cycle.push_back(current);
+            visited[current] = true;
+
+            while (cycle.size() < n) {
+                int next = chooseNextCity(current, visited, pheromones, graph);
+                if (next == -1) break;
+                cycle.push_back(next);
+                visited[next] = true;
+                current = next;
+            }
+
+            if (cycle.size() == n && graph[cycle.back()][cycle[0]] > 0) {
+                cycle.push_back(cycle[0]);
+                double distance = calculateDistance(cycle, graph);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestCycle = cycle;
+                }
+            }
+        }
+
+        if (!bestCycle.empty()) {
+            updatePheromones(pheromones, bestCycle, bestDistance);
+        }
+    }
+
+    return bestCycle;
+}
+\end{lstlisting}
+\end{center}
+
+
+\textbf{ВЫВОД}
+
+В данном разделе были представлены реализации алгоритмов решения задачи коммивояжера: алгоритм полного перебора, муравьиный алгоритм.
+
+\clearpage
