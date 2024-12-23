@@ -1,4 +1,4 @@
-CC = g++
+CC = clang++
 CFLAGS = -std=c++17 -Wall -Werror -Wextra -Wvla
 INC = -I inc
 
@@ -32,7 +32,7 @@ clean:
 	
 
 $(MAIN_TARGET): $(OBJDIR) $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $@ -lstdc++
+	$(CC) $(CFLAGS) $(OBJ) -o $@ -lstdc++ -lm
 	
 $(TEST_TARGET): $(OBJDIR) $(OBJ) $(TESTOBJ)
 	$(CC) $(CFLAGS) $(OBJ) $(TESTOBJ) -o $@ $(TESTFLAGS)
@@ -41,7 +41,7 @@ $(OBJDIR):
 	@mkdir -p out
 	
 $(OBJDIR)/%.o: src/%.cpp $(HEADERS)
-	$(CC) $(INC) -c $< -o $@ $(CFLAGS) 
+	$(CC) $(INC) -c $< -o $@ $(CFLAGS)
 
 	
 # pipelines

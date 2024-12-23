@@ -116,7 +116,7 @@ vector<int> antColonyOptimization(const vector<vector<int>>& graph) {
                 current = next;
             }
 
-            if (cycle.size() == n & graph[cycle.back()][cycle[0]] > 0) {
+            if (cycle.size() == n && graph[cycle.back()][cycle[0]] > 0) {
                 cycle.push_back(cycle[0]);
                 double distance = calculateDistance(cycle, graph);
                 if (distance < bestDistance) {
