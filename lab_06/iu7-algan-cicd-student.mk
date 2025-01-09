@@ -1,4 +1,4 @@
-CC = clang++
+CC = g++
 CFLAGS = -std=c++17 -Wall -Werror -Wextra -Wvla
 INC = -I inc
 
