@@ -141,7 +141,7 @@ void runExperiment(const vector<vector<vector<int>>>& graphs) {
     for (const auto &graph : graphs) {
         auto [_, exactDistance] = bruteForceTSP(graph);
         answers.push_back(exactDistance);
-        cout << exactDistance << " s";
+        cout << exactDistance << " ";
     }
 
     vector<double> alphas = {0.10, 0.25, 0.5, 0.75, 0.9};
